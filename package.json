@@ -1,0 +1,26 @@
+{
+  "name": "uxl-core",
+  "version": "0.1.0",
+  "description": "Core parser and transpiler for the UXL language",
+  "type": "module",
+  "main": "./src/index.js",
+  "scripts": {
+    "build:parser": "nearleyc -s Project src/grammar/grammar.ne -o src/grammar/parser.cjs",
+    "build": "npm run build:parser",
+    "test": "node --test"
+  },
+  "keywords": [],
+  "exports": {
+    ".": {
+      "import": "./src/index.js"
+    }
+  },
+
+  "dependencies": {
+    "moo": "^0.5.2",
+    "nearley": "^2.20.1"
+  },
+  "devDependencies": {
+    "eslint": "^9.36.0"
+  }
+}
