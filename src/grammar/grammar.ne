@@ -184,6 +184,18 @@ TopDef -> ImportDef
         | I18nDef
         | AbDef
 
+# ==== RefPath с индексами: a.b[0].c ====
+RefPath ->
+    ident RefSeg:*   {% d => [d[0], ...(d[1]||[])].join("") %}
+
+#RefSeg ->
+#    "." ident        {% d => "." + d[1] %}
+#  | "[" number "]"   {% d => "[" + d[1] + "]" %}
+
+RefSeg ->
+    "." ident              {% d => "." + d[1] %}
+  | lbrack number rbrack   {% d => "[" + d[1] + "]" %}
+
 
 # ================== import / export / include ==================
 ImportDef -> %IMPORT _ string ImportAlias:? {% d => ({ type:"import", path:d[2], alias: d[3] || null }) %}
@@ -198,9 +210,67 @@ ExportTemplate -> %EXPORT _ %TEMPLATE _ ident _ ":" _ BlockOpen TemplateItems DE
 ExportBlock -> %EXPORT _ %COMPONENT _ ident _ ":" _ BlockOpen ComponentItems DEDENT
   {% d => ({ type:"export_block", name:d[4], items:list(d[9]) }) %}
 
-IncludeLine -> %INCLUDE _ IncludeRef {% d => ({ type:"include", ref:d[2] }) %}
+#IncludeLine -> %INCLUDE _ IncludeRef {% d => ({ type:"include", ref:d[2] }) %}
+
+#IncludeRef -> key {% d => d[0] %}
+
+#IncludeLine ->
+#    %INCLUDE _ IncludeRef IncludeWithOpt:?
+#  {% d => {
+#      const node = { type:"include", ref:d[2] };
+#      if (d[3]) node.locals = d[3];   # { product:{ref:"..."}, ... }
+#      return node;
+#  } %}
+
+IncludeLine ->
+    %INCLUDE _ IncludeRef IncludeWithOpt:?
+  {% d => {
+      const node = { type:"include", ref:d[2] };
+      if (d[3]) node.locals = d[3];   // { product:{ref:"..."}, ... }
+      return node;
+  } %}
+
 
 IncludeRef -> key {% d => d[0] %}
+
+# опциональный хвост "with: ..."
+IncludeWithOpt ->
+    _ %WITH _ ":" _ ( IncludeWithBlock | IncludeWithInline )
+  {% d => d[5] %}
+
+# многострочный блок под отступом
+IncludeWithBlock ->
+    BlockOpen OptCNL IncludeEntryLines:? OptCNL DEDENT
+  {% d => toObj(d[2] || []) %}   # вернёт { key: {ref|value}, ... }
+
+# однострочно (CSV)
+IncludeWithInline ->
+    IncludeInlinePairs
+  {% d => toObj(d[0]) %}
+
+# --- пары для многострочного блока ---
+IncludeEntryLines ->
+    IncludeEntryLine ( OptCNL IncludeEntryLine ):* OptCNL
+  {% d => [ d[0], ...(d[1] ? d[1].map(x=>x[1]) : []) ] %}
+
+IncludeEntryLine ->
+    key _ ":" _ IncludeVal _
+  {% d => ({ key:d[0], value:d[4] }) %}
+
+# --- пары для инлайн-формы ---
+IncludeInlinePairs ->
+    IncludeInlinePair ( _ "," _ IncludeInlinePair ):* ( _ "," ):?
+  {% d => [ d[0], ...(d[1] ? d[1].map(x=>x[3]) : []) ] %}
+
+IncludeInlinePair ->
+    key _ ":" _ IncludeVal
+  {% d => [ d[0], d[4] ] %}
+
+# Значение в with: либо RefPath (=> {ref}), либо обычный Value (=> {value})
+IncludeVal ->
+    RefPath   {% d => ({ ref: d[0] }) %}
+  | Value     {% d => ({ value: unwrapDeep(d[0]) }) %}
+
 
 
 # ================== i18n ==================
@@ -423,7 +493,8 @@ BindObjLines ->
 
 # ВАЖНО: здесь "ref" берём как key-строку, БЕЗ generic Value → это развязка от Track и прочего
 BindObjLine ->
-    "ref"   _ ":" _ key    {% d => ["ref", d[4]] %}
+#    "ref"   _ ":" _ key    {% d => ["ref", d[4]] %}
+    "ref"   _ ":" _ RefPath    {% d => ["ref", d[4]] %}
 #  | "mode"  _ ":" _ (string | ident)  {% d => ["mode", unwrap(d[4])] %}
   | "mode"  _ ":" _ (string | ident)  {% d => ["mode", unwrapDeep(d[4])] %}
   | "value" _ ":" _ (string | number | bool | object | array) {% d => ["value", d[4]] %}
@@ -567,15 +638,6 @@ TrackHeadInline ->
   {% d => ({ kind:"track", event:asEvent(d[2]), props:d[7], ...(d[3] || {}) }) %}
 
 # head-многострочная
-#TrackHeadBlock ->
-#    %TRACK _ TrackEvent HeadExtras:? _ ":" _ BlockOpen OptNL KeyValLineList:? OptNL DEDENT
-#  {% d => ({
-#    kind:"track",
-#    event: asEvent(d[2]),
-#    props: toObj(d[9] || []),
-#    ...(d[3] || {})
-#  }) %}
-
 TrackHeadBlock ->
     %TRACK _ TrackEvent HeadExtras:? _ ":" _ BlockOpen OptNL HeadKeyValLineList:? OptNL DEDENT
   {% d => ({
@@ -806,7 +868,8 @@ number -> %number {% d => Number(d[0].value) %}
 # если лексер выдаёт один токен string и он уже с кавычками:
 string -> %string {% d => JSON.parse(d[0].value[0]==="'" ? d[0].value.replace(/^'/,'"').replace(/'$/,'"') : d[0].value) %}
 bool   -> %bool   {% d => d[0].value === "true" %}
-Ref    -> key     {% d => ({ ref: d[0] }) %}
+Ref    -> RefPath {% d => ({ ref: d[0] }) %}
+#Ref    -> key     {% d => ({ ref: d[0] }) %}
 
 locale -> ident
 

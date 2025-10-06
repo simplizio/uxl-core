@@ -23,7 +23,7 @@ function keywordSet() {
         // layout
         "row", "col", "grid",
         // import/export/reuse
-        "import", "export", "include", "as",
+        "import", "export", "include", "as", "with",
         // IMPORTANT: no "navigate", "emit", "record" here (these are actions)
     ]);
 }
