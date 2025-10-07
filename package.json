@@ -3,24 +3,29 @@
   "version": "0.1.0",
   "description": "Core parser and transpiler for the UXL language",
   "type": "module",
-  "main": "./src/index.js",
-  "scripts": {
-    "build:parser": "nearleyc -s Project src/grammar/grammar.ne -o src/grammar/parser.cjs",
-    "build": "npm run build:parser",
-    "test": "node --test"
-  },
-  "keywords": [],
+  "main": "./dist/index.js",
   "exports": {
     ".": {
-      "import": "./src/index.js"
+      "import": "./dist/index.js",
+      "default": "./dist/index.js"
     }
   },
-
+  "files": ["dist/", "Readme.md", "LICENSE"],
+  "sideEffects": false,
+  "scripts": {
+    "clean": "rm -rf dist tmp && mkdir -p dist tmp",
+    "build:parser": "nearleyc -s Project src/grammar/grammar.ne -o src/grammar/parser.cjs",
+    "build:bundle": "esbuild src/entry.js --bundle --platform=browser --format=esm --outfile=dist/index.js",
+    "build": "npm run clean && npm run build:parser && npm run build:bundle",
+    "prepublishOnly": "npm run build",
+    "test": "node --test"
+  },
   "dependencies": {
-    "moo": "^0.5.2",
-    "nearley": "^2.20.1"
   },
   "devDependencies": {
+    "esbuild": "^0.25.10",
+    "nearley": "^2.20.1",
+    "moo": "^0.5.2",
     "eslint": "^9.36.0"
   }
 }

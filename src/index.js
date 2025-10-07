@@ -43,16 +43,6 @@ function dumpColumn(parser, k) {
         console.error(`  ${rule.name} → ${before} • ${after}   {from:${reference}}`);
     }
 }
-// function dumpColumn(parser, k) {
-//     const col = parser.table?.[k];
-//     if (!col) return;
-//     console.error(`\n== COLUMN ${k} ==`);
-//     for (const st of col.states) {
-//         const before = st.rule.symbols.slice(0, st.dot).map(prettySymbol).join(" ");
-//         const after  = st.rule.symbols.slice(st.dot).map(prettySymbol).join(" ");
-//         console.error(`  ${st.rule.name} → ${before} • ${after}  {from:${st.reference}}`);
-//     }
-// }
 
 /**
  * Разбор исходника с опциональным трейсом.
@@ -98,7 +88,7 @@ export function parse(source, opts = {}) {
     }
 
     if (!parser.results.length) throw new Error("Parse error: no result");
-    // при неоднозначности берём первый — как у тебя было
+    // при неоднозначности берём первый
     return parser.results[0];
 }
 
