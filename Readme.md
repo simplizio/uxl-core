@@ -1,6 +1,6 @@
 # uxl-core
 
-**uxl-core** is the core of **UXL** — _User eXperience Lab_ / _UXer eXperiment Language_.  
+**uxl-core** is the core of **UXL** — _User eXperience Lab_ / _UX eXperiment Language_.  
 It ships the **lexer**, **Nearley parser** (with the current grammar), and a **transpiler** from AST to a stable **contract.json** that renderers/backends can consume.
 
 > This is a **library**. You add it to your project and use its API.  
