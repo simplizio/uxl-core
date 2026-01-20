@@ -11,6 +11,7 @@
     }
   },
   "license": "Apache-2.0",
+  "author": "Viacheslav Soldatov viacheslavsoldatov@gmail.com",
   "files": ["dist/", "Readme.md", "LICENSE"],
   "sideEffects": false,
   "scripts": {
